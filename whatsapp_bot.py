@@ -44,26 +44,32 @@ async def whatsapp_reply(From: str = Form(...), Body: str = Form(...)):
     db = SessionLocal()
     user = db.query(User).filter(User.phone == From).first()
 
-    # If first time user, register
-    if not user:
-        user = User(phone=From, points=100, streak=0, state="awaiting_name")
-        db.add(user)
-        db.commit()
-
-
     resp = MessagingResponse()
     msg = resp.message()
     text = Body.strip()
     lower_text = text.lower()
 
-    # Handle conversation flow based on state
+    # If first time user, register
+    if not user:
+        user = User(phone=From, points=100, streak=0, state="awaiting_name")
+        db.add(user)
+        db.commit()
+        msg.body("👋 Welcome friend! I'm Meka- your accountability buddy.\n\n"
+        "What's your name?")
+        db.close()
+        return Response(content=str(resp), media_type="application/xml")
+
+    # If waiting for name
     if user.state == "awaiting_name":
         user.name = text
         user.state = "awaiting_goal"
         db.commit()
         msg.body(f"Nice to meet you, {user.name}!🎉\n\n"
                  "What's the main goal you'd love to work on today?")
-        
+        db.close()
+        return Response(content=str(resp), media_type="application/xml")
+
+    # If waiting for goal    
     elif user.state == "awaiting_goal":
         user.goal = text
         user.state = "idle"
@@ -73,7 +79,10 @@ async def whatsapp_reply(From: str = Form(...), Body: str = Form(...)):
                  "👉 'progress' \n\n"
                  "Want to see what else I can do? Type 'help'."
                  )
-        
+        db.close()
+        return Response(content=str(resp), media_type="application/xml")
+    
+    # Handle progress entry
     elif user.state == "awaiting_progress":
         today = datetime.date.today()
         if user.last_update == today:
@@ -91,6 +100,8 @@ async def whatsapp_reply(From: str = Form(...), Body: str = Form(...)):
                      f"Streak: {user.streak} days\n"
                      f"Points: {user.points}"
                      )
+            db.close()
+            return Response(content=str(resp), media_type="application/xml")
 
 # COMMANDS
     elif "hello" in lower_text:
