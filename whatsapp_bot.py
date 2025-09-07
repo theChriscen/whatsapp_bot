@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 from twilio.twiml.messaging_response import MessagingResponse
 from sqlalchemy import create_engine, Column, String, Integer, Date, Text, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-import os
 
 # --- Logging Setup ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -15,6 +14,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 
 # --- Database Setup (SQLite) ---
+import os
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./accountability.db")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
